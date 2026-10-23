@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: pagos-consumer-banco
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: 5672
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASSWORD:guest}
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 5
+          initial-interval: 1000ms
+          multiplier: 2
+          max-interval: 8000ms
+  cloud:
+    openfeign:
+      client:
+        config:
+          bankPayments:
+            connect-timeout: 2000
+            read-timeout: 3000
+
+bankPayments:
+  url: ${BANK_BASE_URL:https://REEMPLAZAR_API_ID.execute-api.us-east-1.amazonaws.com/prod}
+
+bankpaymentssimulator:
+  security:
+    apiKeyAuth:
+      key: ${BANK_API_KEY:}
+
+server:
+  error:
+    include-stacktrace: never
+
+logging:
+  level:
+    org.springframework.amqp: INFO
+
+bank:
+  team-code: ${TEAM_CODE:EQUIPO_A}
+  simulation-scenario: ${BANK_SCENARIO:}
+  
+aws:
+  dynamodb:
+    endpoint: ${DYNAMO_ENDPOINT:http://localhost:8000}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY:dummy}
+    secret-key: ${AWS_SECRET_KEY:dummy}
+    tabla-flag: pagos_enviados
+    tabla-log: pagos_log
