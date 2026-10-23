@@ -1,0 +1,86 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: dynamodb-local
+    user: root
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    healthcheck:
+      # Cualquier respuesta HTTP significa que DynamoDB ya esta escuchando
+      test: ["CMD-SHELL", "curl -s -o /dev/null http://localhost:8000"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pagos-consumer:
+    build: ./pagos-consumer-banco
+    container_name: pagos-consumer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      dynamodb-local:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
+      AWS_ACCESS_KEY: dummy
+      AWS_SECRET_KEY: dummy
+      AWS_REGION: us-east-1
+      BANK_BASE_URL: ${BANK_BASE_URL}
+      BANK_API_KEY: ${BANK_API_KEY}
+      BANK_SCENARIO: ${BANK_SCENARIO:-SUCCESS}
+      TEAM_CODE: ${TEAM_CODE:-EQUIPO_A}
+    ports:
+      # 8082 en la PC porque 8080 lo usa phpMyAdmin del monolito
+      - "8082:8080"
+    restart: unless-stopped
+
+  pagos-producer:
+    build: ./pagos-producer
+    container_name: pagos-producer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      dynamodb-local:
+        condition: service_healthy
+    extra_hosts:
+      # Permite llegar a la MariaDB del monolito en la PC (puerto 3307)
+      - "host.docker.internal:host-gateway"
+    environment:
+      DB_URL: jdbc:mariadb://host.docker.internal:3307/agua_db
+      DB_USER: ${DB_USER:-agua_ro}
+      DB_PASSWORD: ${DB_PASSWORD}
+      RABBIT_HOST: rabbitmq
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
+      AWS_ACCESS_KEY: dummy
+      AWS_SECRET_KEY: dummy
+      AWS_REGION: us-east-1
+      PRODUCER_LIMITE: ${PRODUCER_LIMITE:-20}
+      PRODUCER_INTERVALO_MS: ${PRODUCER_INTERVALO_MS:-30000}
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  dynamodb_data:
