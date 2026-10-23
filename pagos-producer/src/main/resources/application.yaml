@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: pagos-producer
+
+  # Base del monolito: SOLO LECTURA
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3307/agua_db}
+    username: ${DB_USER:agua_ro}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.mariadb.jdbc.Driver
+    hikari:
+      read-only: true
+      maximum-pool-size: 3
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        # El monolito usa tablas con mayusculas (Tb_Pagos). Sin esto,
+        # Hibernate las busca en minusculas (tb_pagos) y no las encuentra.
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASSWORD:guest}
+
+server:
+  port: 8081
+  error:
+    include-stacktrace: never
+
+producer:
+  # Cuantos pagos NUEVOS se publican por ciclo (los ya enviados se omiten)
+  limite-por-ciclo: ${PRODUCER_LIMITE:20}
+  # Cada cuanto corre el @Scheduled
+  intervalo-ms: ${PRODUCER_INTERVALO_MS:30000}
+  # Espera antes del primer ciclo, para que la app termine de arrancar
+  retraso-inicial-ms: ${PRODUCER_RETRASO_INICIAL_MS:5000}
+
+# DynamoDB Local: solo se LEE el flag que escribe el consumidor
+aws:
+  dynamodb:
+    endpoint: ${DYNAMO_ENDPOINT:http://localhost:8000}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY:dummy}
+    secret-key: ${AWS_SECRET_KEY:dummy}
+    tabla-flag: pagos_enviados
+
+logging:
+  level:
+    gt.edu.umg.desarrolloweb.pagos: INFO
