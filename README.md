@@ -25,6 +25,10 @@ cuatro features. El monolito **no se modifica**: los servicios nuevos lo leen
 con un usuario de solo lectura. Todo corre localmente en Docker Compose; la
 única llamada externa real es el LLM del chatbot.
 
+El monolito está en
+[`Grupo-1-Sistema-de-agua/Sistema_Oficina_De_Agua`](https://github.com/Grupo-1-Sistema-de-agua/Sistema_Oficina_De_Agua);
+este repositorio no lo modifica.
+
 ![Arquitectura de la solución integrada](docs/diagramas/arquitectura-fase2.png)
 
 > Diagrama elaborado con **Archify** a partir de la arquitectura de Fase 2 y del

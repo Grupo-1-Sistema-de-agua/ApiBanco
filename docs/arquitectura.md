@@ -20,7 +20,8 @@ Fuente editable (Archify):
 
 La Fase 1 entregó un **monolito** funcional (CodeIgniter 4, PHP 8.2, MariaDB
 10.11) con auth, tarifas, clientes, contadores, lecturas, recibos y pagos. La
-Fase 2 no lo reescribe: le agrega cuatro features alrededor.
+Fase 2 no lo reescribe: le agrega cuatro features alrededor. El monolito está
+en [`Grupo-1-Sistema-de-agua/Sistema_Oficina_De_Agua`](https://github.com/Grupo-1-Sistema-de-agua/Sistema_Oficina_De_Agua).
 
 Restricciones que gobiernan el diseño:
 
