@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Oficina del Agua — Arquitectura Fase 2",
+    "subtitle": "Monolito heredado sin modificar + cuatro features integradas",
+    "locale": "es",
+    "output": "arquitectura-fase2.html",
+    "quality_profile": "showcase",
+    "viewBox": [1200, 860]
+  },
+  "components": [
+    { "id": "mono-app", "type": "backend", "label": "Monolito heredado", "sublabel": "CodeIgniter 4 · PHP 8.2", "tag": "NO SE TOCA", "pos": [40, 100], "size": [200, 70] },
+    { "id": "mono-db", "type": "database", "label": "MariaDB", "sublabel": "agua_db · Tb_Pagos", "pos": [40, 240], "size": [200, 70] },
+
+    { "id": "nextjs", "type": "frontend", "label": "Next.js BFF", "sublabel": "página pública + proxy", "tag": "F1 · F2", "pos": [320, 40], "size": [200, 70] },
+    { "id": "consulta", "type": "backend", "label": "consulta-service", "sublabel": "Spring Boot · solo lectura", "tag": "F1", "pos": [620, 40], "size": [200, 70] },
+    { "id": "chatbot", "type": "backend", "label": "chatbot-service", "sublabel": "Spring Boot + RAG", "tag": "F2", "pos": [620, 160], "size": [200, 70] },
+    { "id": "pgvector", "type": "database", "label": "PostgreSQL + pgvector", "sublabel": "embeddings del dominio", "pos": [920, 160], "size": [200, 70] },
+
+    { "id": "producer", "type": "backend", "label": "pagos-producer", "sublabel": "@Scheduled · Spring Boot", "tag": "F3", "pos": [320, 320], "size": [200, 70] },
+    { "id": "rabbit", "type": "messagebus", "label": "RabbitMQ", "sublabel": "pagos.exchange · DLQ", "tag": "F3", "pos": [620, 320], "size": [200, 70] },
+    { "id": "consumer", "type": "backend", "label": "pagos-consumer", "sublabel": "Spring Boot · reintentos", "tag": "F3", "pos": [920, 320], "size": [200, 70] },
+    { "id": "dynamo", "type": "database", "label": "DynamoDB Local", "sublabel": "flags · logs · réplica", "tag": "F3 · F4", "pos": [920, 460], "size": [200, 70] },
+
+    { "id": "sync", "type": "backend", "label": "sync-service", "sublabel": "Spring Boot · diff + upsert", "tag": "F4", "pos": [320, 460], "size": [200, 70] },
+    { "id": "mongo", "type": "database", "label": "MongoDB", "sublabel": "alternativa NoSQL", "pos": [620, 460], "size": [200, 70] },
+
+    { "id": "bank-erp", "type": "external", "label": "Banco y ERP simulados", "sublabel": "API Gateway · OpenAPI", "pos": [620, 640], "size": [200, 70] },
+    { "id": "llm", "type": "external", "label": "LLM externo", "sublabel": "OpenAI · Bedrock · Ollama", "pos": [920, 760], "size": [200, 70] }
+  ],
+  "boundaries": [
+    { "kind": "security-group", "label": "Monolito heredado", "wraps": ["mono-app", "mono-db"], "pad": 28 },
+    { "kind": "region", "label": "Docker Compose local (Fase 2)", "wraps": ["nextjs", "consulta", "chatbot", "pgvector", "producer", "rabbit", "consumer", "dynamo", "sync", "mongo"], "pad": 30 }
+  ],
+  "connections": [
+    { "id": "mono-sql", "from": "mono-app", "to": "mono-db", "label": "SQL", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "next-consulta", "from": "nextjs", "to": "consulta", "label": "consulta", "fromSide": "right", "toSide": "left" },
+    { "id": "next-chatbot", "from": "nextjs", "to": "chatbot", "label": "chat", "fromSide": "bottom", "toSide": "left", "via": [[420, 140], [600, 140], [600, 195]] },
+    { "id": "consulta-db", "from": "consulta", "to": "mono-db", "label": "SELECT", "variant": "emphasis", "fromSide": "top", "toSide": "right", "via": [[720, 30], [260, 30], [260, 275]] },
+    { "id": "chatbot-pg", "from": "chatbot", "to": "pgvector", "label": "top-k", "fromSide": "right", "toSide": "left" },
+    { "id": "chatbot-llm", "from": "chatbot", "to": "llm", "label": "HTTPS", "variant": "dashed", "fromSide": "bottom", "toSide": "right", "via": [[720, 270], [1170, 270], [1170, 795]] },
+
+    { "id": "producer-db", "from": "producer", "to": "mono-db", "label": "SELECT", "variant": "emphasis", "fromSide": "left", "toSide": "bottom", "via": [[280, 355], [280, 320], [140, 320]] },
+    { "id": "producer-queue", "from": "producer", "to": "rabbit", "label": "publica JSON", "fromSide": "right", "toSide": "left" },
+    { "id": "queue-consumer", "from": "rabbit", "to": "consumer", "label": "consume", "fromSide": "right", "toSide": "left" },
+    { "id": "consumer-bank", "from": "consumer", "to": "bank-erp", "label": "POST banco / ERP", "fromSide": "right", "toSide": "right", "via": [[1140, 355], [1140, 675]] },
+    { "id": "consumer-dynamo", "from": "consumer", "to": "dynamo", "label": "flag + log", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "sync-db", "from": "sync", "to": "mono-db", "label": "SELECT", "variant": "emphasis", "fromSide": "left", "toSide": "left", "via": [[280, 495], [280, 580], [30, 580], [30, 275]] },
+    { "id": "sync-dynamo", "from": "sync", "to": "dynamo", "label": "diff + upsert", "fromSide": "right", "toSide": "left", "via": [[560, 495], [560, 430], [900, 430], [900, 495]] },
+    { "id": "sync-mongo", "from": "sync", "to": "mongo", "label": "alternativa", "variant": "dashed", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "rose", "title": "Regla de oro", "items": ["El monolito no se modifica: ni esquema ni datos.", "Los servicios nuevos solo leen MariaDB (SELECT).", "El flag de envío vive fuera del monolito, en DynamoDB."] },
+    { "dot": "cyan", "title": "Feature 3 — pagos por colas", "items": ["Productor lee pagos pendientes y publica en RabbitMQ.", "Consumidor llama al banco/ERP con reintentos y DLQ.", "Idempotencia por clave + flag; log por cada intento."] },
+    { "dot": "violet", "title": "Features 1, 2 y 4", "items": ["Next.js BFF: consulta pública con captcha y chatbot.", "RAG con pgvector; la API key del LLM no llega al navegador.", "Sync asíncrono con diff + upsert, nunca borra."] }
+  ]
+}
