@@ -406,6 +406,27 @@ docker compose down
 `docker compose down` conserva los datos en volúmenes; usa `down -v` solo si
 quieres borrar flags y logs.
 
+### 2.5 Diagramas de apoyo
+
+**Secuencia del camino feliz:** productor → MariaDB → RabbitMQ → consumidor →
+banco → flag/log.
+
+![Secuencia de la Feature 3](docs/diagramas/feature3-secuencia.png)
+
+> Fuente editable:
+> [`docs/diagramas/feature3-secuencia.sequence.json`](docs/diagramas/feature3-secuencia.sequence.json).
+
+**Datos e idempotencia:** qué viaja al banco y qué se guarda como evidencia.
+
+![Dataflow de la Feature 3](docs/diagramas/feature3-datos.png)
+
+> Fuente editable:
+> [`docs/diagramas/feature3-datos.dataflow.json`](docs/diagramas/feature3-datos.dataflow.json).
+
+Las variantes de error (duplicado, 500, 400 y recuperación) están en el
+diagrama de estados y en el de actividades de
+[`docs/diagramas.md`](docs/diagramas.md).
+
 ---
 
 ## 3. Ejecución de este repositorio
@@ -455,9 +476,13 @@ ApiBanco/
 ├─ docs/
 │  ├─ arquitectura.md           # arquitectura integrada en detalle
 │  ├─ diagramas/
-│  │  ├─ README.md              # cómo regenerar el diagrama
+│  │  ├─ README.md              # cómo regenerar los diagramas
 │  │  ├─ arquitectura-fase2.png
-│  │  └─ arquitectura-fase2.architecture.json
+│  │  ├─ arquitectura-fase2.architecture.json
+│  │  ├─ feature3-secuencia.png
+│  │  ├─ feature3-secuencia.sequence.json
+│  │  ├─ feature3-datos.png
+│  │  └─ feature3-datos.dataflow.json
 │  ├─ pruebas-e2e.md            # 5 escenarios y evidencia
 │  ├─ ensayo.md                 # ensayo general y checklist
 │  ├─ seguridad.md              # credenciales, permisos y datos
@@ -481,6 +506,7 @@ ApiBanco/
 - [Conciliación de pagos](docs/conciliacion.md)
 - [Datos de prueba](docs/datos-prueba.md)
 - [Diagramas de la Feature 3](docs/diagramas.md)
+- [Secuencia y dataflow (Archify)](docs/diagramas/README.md)
 - [Palabras clave y preguntas de defensa](README-palabras-clave.md)
 - [Notas del contrato del banco](api-bancos-feature3.md)
 

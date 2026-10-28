@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Feature 3 — secuencia de un pago",
+    "subtitle": "Camino feliz: pendiente → cola → banco → flag + log",
+    "locale": "es",
+    "output": "feature3-secuencia.html",
+    "viewBox": [1080, 660],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "visual_preset": "signal-flow"
+  },
+  "participants": [
+    { "id": "db", "type": "database", "label": "MariaDB", "sublabel": "Tb_Pagos · solo lectura" },
+    { "id": "producer", "type": "backend", "label": "pagos-producer", "sublabel": "@Scheduled" },
+    { "id": "rabbit", "type": "messagebus", "label": "RabbitMQ", "sublabel": "pagos.banco" },
+    { "id": "consumer", "type": "backend", "label": "pagos-consumer", "sublabel": "Spring Boot" },
+    { "id": "bank", "type": "external", "label": "Banco simulado", "sublabel": "OpenAPI" },
+    { "id": "dynamo", "type": "database", "label": "DynamoDB", "sublabel": "flag + log" }
+  ],
+  "segments": [
+    { "from": 140, "to": 280, "label": "1. Productor" },
+    { "from": 300, "to": 360, "label": "2. Cola" },
+    { "from": 380, "to": 552, "label": "3. Consumidor + banco" }
+  ],
+  "messages": [
+    { "from": "producer", "to": "db", "y": 180, "label": "SELECT pagos pendientes", "variant": "emphasis" },
+    { "from": "producer", "to": "dynamo", "y": 220, "label": "GetItem flag", "variant": "default" },
+    { "from": "producer", "to": "rabbit", "y": 260, "label": "publish EQA-000123", "variant": "emphasis" },
+    { "from": "rabbit", "to": "consumer", "y": 340, "label": "deliver", "variant": "emphasis" },
+    { "from": "consumer", "to": "dynamo", "y": 390, "label": "GetItem flag", "variant": "default" },
+    { "from": "consumer", "to": "bank", "y": 428, "label": "POST /bank/v1/payments", "variant": "emphasis" },
+    { "from": "bank", "to": "consumer", "y": 466, "label": "201 + receiptId", "variant": "return" },
+    { "from": "consumer", "to": "dynamo", "y": 504, "label": "PutItem flag + log EXITOSO", "variant": "emphasis" },
+    { "from": "consumer", "to": "rabbit", "y": 542, "label": "ack", "variant": "dashed" }
+  ],
+  "activations": [
+    { "participant": "producer", "from": 160, "to": 280, "type": "backend" },
+    { "participant": "rabbit", "from": 250, "to": 360, "type": "messagebus" },
+    { "participant": "consumer", "from": 300, "to": 552, "type": "backend" },
+    { "participant": "bank", "from": 418, "to": 476, "type": "external" },
+    { "participant": "dynamo", "from": 210, "to": 230, "type": "database" },
+    { "participant": "dynamo", "from": 380, "to": 514, "type": "database" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Camino feliz", "items": ["El productor lee pendientes y publica un mensaje por pago.", "El consumidor mapea al contrato y hace el POST.", "201 guarda flag + log; la cola confirma con ack."] },
+    { "dot": "emerald", "title": "Idempotencia", "items": ["La clave EQA-000123 es estable entre reintentos.", "El flag se consulta antes de llamar al banco.", "409 DUPLICATE_PAYMENT también cuenta como éxito."] },
+    { "dot": "rose", "title": "Errores", "items": ["5xx, 429 y timeout: 5 intentos con 1/2/4/8 s.", "400/422 y mensajes inválidos: DLQ directa.", "Si no hay flag, el pago se puede reenviar."] }
+  ]
+}

@@ -81,6 +81,20 @@ Restricciones que gobiernan el diseño:
 6. Los fallos temporales se reintentan (5 intentos, 1/2/4/8 s); los definitivos
    van a `pagos.banco.dlq` sin flag, para poder reenviar después.
 
+**Secuencia del camino feliz:**
+
+![Secuencia de la Feature 3](diagramas/feature3-secuencia.png)
+
+> Fuente editable:
+> [`diagramas/feature3-secuencia.sequence.json`](diagramas/feature3-secuencia.sequence.json).
+
+**Datos e idempotencia:**
+
+![Dataflow de la Feature 3](diagramas/feature3-datos.png)
+
+> Fuente editable:
+> [`diagramas/feature3-datos.dataflow.json`](diagramas/feature3-datos.dataflow.json).
+
 ### 4.4 Replicación asíncrona (Feature 4)
 
 1. `POST /api/sync/resumen` responde `202 Accepted` con un `jobId`.

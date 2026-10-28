@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Feature 3 — datos e idempotencia",
+    "subtitle": "Qué viaja al banco y qué se guarda como evidencia",
+    "locale": "es",
+    "output": "feature3-datos.html",
+    "viewBox": [1080, 690],
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "visual_preset": "signal-flow"
+  },
+  "stages": [
+    { "label": "Origen" },
+    { "label": "Mensaje" },
+    { "label": "Banco" },
+    { "label": "Evidencia" }
+  ],
+  "nodes": [
+    { "id": "tb-pagos", "type": "database", "label": "Tb_Pagos", "sublabel": "monto · fecha · cliente", "stage": 0, "row": 1, "tag": "solo lectura" },
+    { "id": "mapper", "type": "backend", "label": "PagoMapper", "sublabel": "arma el PagoMensaje", "stage": 1, "row": 0, "tag": "EQA-000123" },
+    { "id": "queue", "type": "messagebus", "label": "pagos.banco", "sublabel": "JSON del pago", "stage": 1, "row": 2, "tag": "idempotencyKey" },
+    { "id": "consumer", "type": "backend", "label": "pagos-consumer", "sublabel": "mapea al contrato", "stage": 2, "row": 0, "tag": "Idempotency-Key" },
+    { "id": "bank", "type": "external", "label": "Banco simulado", "sublabel": "POST /bank/v1/payments", "stage": 2, "row": 2, "tag": "x-api-key" },
+    { "id": "flag", "type": "database", "label": "pagos_enviados", "sublabel": "flag de enviado", "stage": 3, "row": 0, "tag": "solo éxito" },
+    { "id": "log", "type": "database", "label": "pagos_log", "sublabel": "un registro por intento", "stage": 3, "row": 2, "tag": "sin PII" }
+  ],
+  "flows": [
+    { "from": "tb-pagos", "to": "mapper", "label": "pago + cliente", "classification": "SELECT", "variant": "emphasis", "route": "straight" },
+    { "from": "mapper", "to": "queue", "label": "PagoMensaje", "classification": "EQA-000123", "variant": "emphasis", "route": "straight" },
+    { "from": "queue", "to": "consumer", "label": "JSON", "classification": "idempotencyKey", "variant": "emphasis", "route": "straight" },
+    { "from": "consumer", "to": "bank", "label": "BankPaymentRequest", "classification": "payer + amount", "variant": "emphasis", "route": "straight" },
+    { "from": "consumer", "to": "flag", "label": "flag", "classification": "solo éxito", "variant": "emphasis", "route": "straight" },
+    { "from": "consumer", "to": "log", "label": "intento", "classification": "cada resultado", "variant": "default", "route": "straight", "labelAt": [637, 220] }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Clave estable", "items": ["EQA-000123 se mantiene en todos los reintentos.", "El banco también es idempotente: 409 DUPLICATE_PAYMENT es éxito.", "El flag se escribe una sola vez, al confirmar la entrega."] },
+    { "dot": "rose", "title": "Datos personales", "items": ["fullName y taxId viajan al banco porque el contrato los exige.", "No se guardan en pagos_enviados ni en pagos_log.", "Los logs solo muestran paymentId, clave, intento y estado."] },
+    { "dot": "cyan", "title": "Evidencia", "items": ["El 201 y el receiptId se guardan en el flag y el log.", "pagos_enviados responde ¿ya se entregó?", "pagos_log responde ¿qué pasó en cada intento?"] }
+  ]
+}
