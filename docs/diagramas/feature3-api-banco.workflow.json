@@ -1,0 +1,60 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Contexto del API del banco",
+    "subtitle": "Solo la llamada del consumidor al banco y la clasificación de la respuesta",
+    "locale": "es",
+    "output": "feature3-api-banco.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "external": { "label": "Sistema externo" },
+        "backend": { "label": "Consumidor / fin" },
+        "cloud": { "label": "API del banco" },
+        "security": { "label": "Decisión" },
+        "database": { "label": "Evidencia" },
+        "messagebus": { "label": "Reintentos / DLQ" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "consumer", "label": "pagos-consumer" },
+    { "id": "api", "label": "API del banco" },
+    { "id": "evidence", "label": "Evidencia" },
+    { "id": "recovery", "label": "Reintentos y DLQ", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "request", "label": "Solicitud", "fromCol": 0, "toCol": 1 },
+    { "id": "call", "label": "Llamada al banco", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "result", "label": "Resultado", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["start", "map", "post", "decision", "success", "end"],
+  "nodes": [
+    { "id": "start", "lane": "consumer", "col": 0, "type": "external", "label": "Pago en cola", "sublabel": "EQA-000123", "width": 140 },
+    { "id": "map", "lane": "consumer", "col": 1, "type": "backend", "label": "Mapear request", "sublabel": "payer + amount", "tag": "centavos", "width": 140 },
+    { "id": "post", "lane": "api", "col": 2, "type": "cloud", "label": "POST /bank/v1/payments", "sublabel": "x-api-key + Idempotency-Key", "tag": "OpenAPI", "width": 160 },
+    { "id": "decision", "lane": "api", "col": 3, "type": "security", "label": "Respuesta del banco", "sublabel": "status + code", "tag": "201 · 409 · 400 · 422 · 429 · 5xx", "width": 160 },
+    { "id": "success", "lane": "evidence", "col": 4, "type": "database", "label": "Flag + log EXITOSO", "sublabel": "receiptId", "tag": "201 / 409", "width": 150 },
+    { "id": "retry", "lane": "recovery", "col": 3, "type": "messagebus", "label": "Reintentar", "sublabel": "1/2/4/8 s · 5 intentos", "tag": "misma clave", "width": 150 },
+    { "id": "dlq", "lane": "recovery", "col": 4, "type": "messagebus", "label": "DLQ", "sublabel": "sin flag", "tag": "revisar", "width": 140 },
+    { "id": "end", "lane": "evidence", "col": 5, "type": "backend", "label": "Fin", "sublabel": "pago entregado", "width": 140 }
+  ],
+  "edges": [
+    { "id": "start-map", "from": "start", "to": "map", "variant": "default" },
+    { "id": "map-post", "from": "map", "to": "post", "label": "POST", "variant": "emphasis" },
+    { "id": "post-decision", "from": "post", "to": "decision", "variant": "default" },
+    { "id": "decision-success", "from": "decision", "to": "success", "label": "201 / 409", "variant": "emphasis" },
+    { "id": "decision-retry", "from": "decision", "to": "retry", "label": "429 / 5xx / timeout", "variant": "dashed" },
+    { "id": "retry-dlq", "from": "retry", "to": "dlq", "label": "5 intentos", "variant": "security" },
+    { "id": "decision-dlq", "from": "decision", "to": "dlq", "label": "400 / 422", "variant": "security" },
+    { "id": "success-end", "from": "success", "to": "end", "variant": "default" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Endpoints", "items": ["POST /bank/v1/payments: envía el pago.", "GET /bank/v1/payments/{idempotencyKey}: consulta o reconcilia.", "GET /bank/v1/health: estado del servicio, sin API key."] },
+    { "dot": "emerald", "title": "Headers", "items": ["x-api-key: autenticación del equipo.", "Idempotency-Key: clave EQA-000123, estable entre reintentos.", "X-Correlation-Id y X-Simulation-Scenario para trazas y pruebas."] },
+    { "dot": "rose", "title": "Clasificación", "items": ["201 y 409 DUPLICATE_PAYMENT: éxito, flag + log.", "400/422: error de datos, DLQ sin reintento.", "429/5xx/timeout: 5 reintentos; luego DLQ sin flag."] }
+  ]
+}

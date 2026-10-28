@@ -408,6 +408,19 @@ quieres borrar flags y logs.
 
 ### 2.5 Diagramas de apoyo
 
+**Contexto del API del banco:** solo la llamada del consumidor, el `POST`, la
+clasificación de respuestas y el flag/DLQ.
+
+![Contexto del API del banco](docs/diagramas/feature3-api-banco.png)
+
+> Fuente editable:
+> [`docs/diagramas/feature3-api-banco.workflow.json`](docs/diagramas/feature3-api-banco.workflow.json).
+>
+> Endpoints: `POST /bank/v1/payments` (flujo principal),
+> `GET /bank/v1/payments/{idempotencyKey}` (consulta) y
+> `GET /bank/v1/health` (estado). Headers: `x-api-key`, `Idempotency-Key`,
+> `X-Correlation-Id` y `X-Simulation-Scenario`.
+
 **Secuencia del camino feliz:** productor → MariaDB → RabbitMQ → consumidor →
 banco → flag/log.
 
@@ -479,6 +492,8 @@ ApiBanco/
 │  │  ├─ README.md              # cómo regenerar los diagramas
 │  │  ├─ arquitectura-fase2.png
 │  │  ├─ arquitectura-fase2.architecture.json
+│  │  ├─ feature3-api-banco.png
+│  │  ├─ feature3-api-banco.workflow.json
 │  │  ├─ feature3-secuencia.png
 │  │  ├─ feature3-secuencia.sequence.json
 │  │  ├─ feature3-datos.png

@@ -81,6 +81,18 @@ Restricciones que gobiernan el diseño:
 6. Los fallos temporales se reintentan (5 intentos, 1/2/4/8 s); los definitivos
    van a `pagos.banco.dlq` sin flag, para poder reenviar después.
 
+**Contexto del API del banco (solo la llamada y la clasificación):**
+
+![Contexto del API del banco](diagramas/feature3-api-banco.png)
+
+> Fuente editable:
+> [`diagramas/feature3-api-banco.workflow.json`](diagramas/feature3-api-banco.workflow.json).
+>
+> Endpoints: `POST /bank/v1/payments` (principal),
+> `GET /bank/v1/payments/{idempotencyKey}` (consulta) y
+> `GET /bank/v1/health` (estado). Headers: `x-api-key`, `Idempotency-Key`,
+> `X-Correlation-Id` y `X-Simulation-Scenario`.
+
 **Secuencia del camino feliz:**
 
 ![Secuencia de la Feature 3](diagramas/feature3-secuencia.png)

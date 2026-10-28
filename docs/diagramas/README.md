@@ -15,6 +15,8 @@ Next.js como BFF, las bases de datos, RabbitMQ y los sistemas externos
 
 | Archivo | Qué es |
 |---|---|
+| `feature3-api-banco.png` | Contexto del API del banco: POST, respuestas y flag/DLQ |
+| `feature3-api-banco.workflow.json` | Fuente editable de Archify |
 | `feature3-secuencia.png` | Secuencia del camino feliz (productor → cola → consumidor → banco → flag/log) |
 | `feature3-secuencia.sequence.json` | Fuente editable de Archify |
 | `feature3-datos.png` | Dataflow: qué datos viajan y qué se guarda como evidencia |
@@ -33,6 +35,10 @@ cd /d %TEMP%\archify
 node archify\bin\archify.mjs deliver architecture ^
   C:\Users\mario\Desktop\ApiBanco\docs\diagramas\arquitectura-fase2.architecture.json ^
   %TEMP%\arquitectura-fase2.html --quality showcase --open
+
+node archify\bin\archify.mjs deliver workflow ^
+  C:\Users\mario\Desktop\ApiBanco\docs\diagramas\feature3-api-banco.workflow.json ^
+  %TEMP%\feature3-api-banco.html --quality showcase --open
 
 node archify\bin\archify.mjs deliver sequence ^
   C:\Users\mario\Desktop\ApiBanco\docs\diagramas\feature3-secuencia.sequence.json ^

@@ -3,8 +3,8 @@
 Diagramas de la solución: **casos de uso**, **actividades**, **estados** y
 **componentes**. Están en Mermaid para que GitHub los renderice directamente.
 
-> Versiones en imagen (Archify): [secuencia](diagramas/feature3-secuencia.png)
-> y [dataflow](diagramas/feature3-datos.png).
+> Versiones en imagen (Archify): [contexto del API del banco](diagramas/feature3-api-banco.png),
+> [secuencia](diagramas/feature3-secuencia.png) y [dataflow](diagramas/feature3-datos.png).
 
 Contexto: los pagos pendientes del monolito viajan por RabbitMQ, el consumidor
 los envía al banco simulado y se guarda un flag + log en DynamoDB.
