@@ -1,0 +1,574 @@
+{
+  "info": {
+    "_postman_id": "407baba5-c3d2-4c7d-bd87-616b98e608be",
+    "name": "ApiBanco — Feature 3",
+    "description": "Publica mensajes en RabbitMQ y prueba el contrato del banco. No dispara al productor ni al consumidor: esos se ven en logs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. RabbitMQ — publicar",
+      "item": [
+        {
+          "name": "Éxito (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pago = {",
+                  "  idempotencyKey: pm.collectionVariables.get(\"successKey\"),",
+                  "  paymentId: 999001,",
+                  "  customerCode: \"CLI-0001\",",
+                  "  fullName: \"Cliente de Prueba\",",
+                  "  taxId: \"CF\",",
+                  "  amount: \"125.50\",",
+                  "  transactionDate: \"2026-10-27T10:00:00-06:00\",",
+                  "  channel: \"CASH\",",
+                  "  description: \"Servicio de agua 2026-10\"",
+                  "};",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "  properties: { content_type: \"application/json\", delivery_mode: 2 },",
+                  "  routing_key: \"banco\",",
+                  "  payload: JSON.stringify(pago),",
+                  "  payload_encoding: \"string\"",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"routed\", () => pm.expect(pm.response.json().routed).to.eql(true));",
+                  "console.log(\"routed:\", pm.response.json().routed);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/exchanges/{{vhost}}/pagos.exchange/publish",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Duplicado (misma clave)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pago = {",
+                  "  idempotencyKey: pm.collectionVariables.get(\"successKey\"),",
+                  "  paymentId: 999002,",
+                  "  customerCode: \"CLI-0001\",",
+                  "  fullName: \"Cliente de Prueba\",",
+                  "  taxId: \"CF\",",
+                  "  amount: \"125.50\",",
+                  "  transactionDate: \"2026-10-27T10:00:00-06:00\",",
+                  "  channel: \"CASH\",",
+                  "  description: \"Duplicado de prueba\"",
+                  "};",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "  properties: { content_type: \"application/json\", delivery_mode: 2 },",
+                  "  routing_key: \"banco\",",
+                  "  payload: JSON.stringify(pago),",
+                  "  payload_encoding: \"string\"",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"routed\", () => pm.expect(pm.response.json().routed).to.eql(true));",
+                  "console.log(\"routed:\", pm.response.json().routed);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/exchanges/{{vhost}}/pagos.exchange/publish",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fallo 500 (reintentos)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pago = {",
+                  "  idempotencyKey: pm.collectionVariables.get(\"failKey\"),",
+                  "  paymentId: 999500,",
+                  "  customerCode: \"CLI-0001\",",
+                  "  fullName: \"Cliente de Prueba\",",
+                  "  taxId: \"CF\",",
+                  "  amount: \"100.00\",",
+                  "  transactionDate: \"2026-10-27T10:00:00-06:00\",",
+                  "  channel: \"CASH\",",
+                  "  description: \"Prueba de reintentos\"",
+                  "};",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "  properties: { content_type: \"application/json\", delivery_mode: 2 },",
+                  "  routing_key: \"banco\",",
+                  "  payload: JSON.stringify(pago),",
+                  "  payload_encoding: \"string\"",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"routed\", () => pm.expect(pm.response.json().routed).to.eql(true));",
+                  "console.log(\"routed:\", pm.response.json().routed);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/exchanges/{{vhost}}/pagos.exchange/publish",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Error 400 (validación)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const pago = {",
+                  "  idempotencyKey: pm.collectionVariables.get(\"badKey\"),",
+                  "  paymentId: 999400,",
+                  "  customerCode: \"CLI-0001\",",
+                  "  fullName: \"Cliente de Prueba con un nombre deliberadamente largo para provocar el error de validacion del banco y confirmar que el mensaje va directo a la cola de errores sin reintentos\",",
+                  "  taxId: \"CF\",",
+                  "  amount: \"100.00\",",
+                  "  transactionDate: \"2026-10-27T10:00:00-06:00\",",
+                  "  channel: \"CASH\",",
+                  "  description: \"Prueba de validacion\"",
+                  "};",
+                  "pm.request.body.raw = JSON.stringify({",
+                  "  properties: { content_type: \"application/json\", delivery_mode: 2 },",
+                  "  routing_key: \"banco\",",
+                  "  payload: JSON.stringify(pago),",
+                  "  payload_encoding: \"string\"",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"routed\", () => pm.expect(pm.response.json().routed).to.eql(true));",
+                  "console.log(\"routed:\", pm.response.json().routed);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/exchanges/{{vhost}}/pagos.exchange/publish",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. RabbitMQ — estado",
+      "item": [
+        {
+          "name": "Cola pagos.banco",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const q = pm.response.json();",
+                  "console.log(\"queue:\", q.name, \"messages:\", q.messages, \"consumers:\", q.consumers);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/queues/{{vhost}}/pagos.banco",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DLQ pagos.banco.dlq",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "const q = pm.response.json();",
+                  "console.log(\"queue:\", q.name, \"messages:\", q.messages, \"consumers:\", q.consumers);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/queues/{{vhost}}/pagos.banco.dlq",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Purgar DLQ",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://{{rabbitHost}}:{{rabbitPort}}/api/queues/{{vhost}}/pagos.banco.dlq/contents",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{rabbitUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{rabbitPass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Banco — contrato",
+      "item": [
+        {
+          "name": "Health del banco",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", () => pm.response.to.have.status(200));",
+                  "console.log(\"bank:\", pm.response.text());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{bankBaseUrl}}/bank/v1/health"
+          }
+        },
+        {
+          "name": "Enviar pago directo (contrato)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 o 409\", () => pm.expect([201, 409]).to.include(pm.response.code));",
+                  "if (pm.response.code === 201) {",
+                  "  console.log(\"receiptId:\", pm.response.json().receiptId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{bankApiKey}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{bankDirectKey}}"
+              },
+              {
+                "key": "X-Correlation-Id",
+                "value": "{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamCode\": \"{{teamCode}}\",\n  \"payer\": {\n    \"customerCode\": \"CLI-0001\",\n    \"fullName\": \"Cliente de Prueba\",\n    \"taxId\": \"CF\"\n  },\n  \"amount\": {\n    \"valueInCents\": 12550,\n    \"currency\": \"GTQ\"\n  },\n  \"transactionDate\": \"2026-10-27T10:00:00-06:00\",\n  \"channel\": \"CASH\",\n  \"description\": \"Prueba directa desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{bankBaseUrl}}/bank/v1/payments"
+          }
+        },
+        {
+          "name": "Consultar pago por clave",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 o 404\", () => pm.expect([200, 404]).to.include(pm.response.code));",
+                  "console.log(\"bank response:\", pm.response.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{bankApiKey}}"
+              }
+            ],
+            "url": "{{bankBaseUrl}}/bank/v1/payments/{{bankDirectKey}}"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "rabbitHost",
+      "value": "localhost"
+    },
+    {
+      "key": "rabbitPort",
+      "value": "15672"
+    },
+    {
+      "key": "rabbitUser",
+      "value": "guest"
+    },
+    {
+      "key": "rabbitPass",
+      "value": "guest"
+    },
+    {
+      "key": "vhost",
+      "value": "%2F"
+    },
+    {
+      "key": "bankBaseUrl",
+      "value": ""
+    },
+    {
+      "key": "bankApiKey",
+      "value": ""
+    },
+    {
+      "key": "teamCode",
+      "value": "EQUIPO_A"
+    },
+    {
+      "key": "successKey",
+      "value": "EQA-DEMO-001"
+    },
+    {
+      "key": "failKey",
+      "value": "EQA-DEMO-500"
+    },
+    {
+      "key": "badKey",
+      "value": "EQA-DEMO-400"
+    },
+    {
+      "key": "bankDirectKey",
+      "value": "EQA-POSTMAN-001"
+    }
+  ]
+}

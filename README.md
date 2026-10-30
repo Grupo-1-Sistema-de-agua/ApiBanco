@@ -498,6 +498,10 @@ ApiBanco/
 │  │  ├─ feature3-secuencia.sequence.json
 │  │  ├─ feature3-datos.png
 │  │  └─ feature3-datos.dataflow.json
+│  ├─ postman/                  # colección para probar la Feature 3
+│  │  ├─ ApiBanco-Feature3.postman_collection.json
+│  │  ├─ ApiBanco-Feature3.postman_environment.json
+│  │  └─ README.md
 │  ├─ pruebas-e2e.md            # 5 escenarios y evidencia
 │  ├─ ensayo.md                 # ensayo general y checklist
 │  ├─ seguridad.md              # credenciales, permisos y datos
@@ -522,6 +526,7 @@ ApiBanco/
 - [Datos de prueba](docs/datos-prueba.md)
 - [Diagramas de la Feature 3](docs/diagramas.md)
 - [Secuencia y dataflow (Archify)](docs/diagramas/README.md)
+- [Colección Postman](docs/postman/README.md)
 - [Palabras clave y preguntas de defensa](README-palabras-clave.md)
 - [Notas del contrato del banco](api-bancos-feature3.md)
 
