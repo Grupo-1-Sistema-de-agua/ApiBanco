@@ -65,7 +65,37 @@ Después de la prueba, vuelve a `SUCCESS` y recrea el consumidor.
 - **DynamoDB:** `scripts/conciliar.ps1 -IncluirPruebas`
 - **Banco:** request **Consultar pago por clave**
 
-## 5. Notas
+## 5. Probar en terminal (sin Postman)
+
+Desde `C:\Users\mario\Desktop\ApiBanco`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\probar-mensaje.ps1 `
+  -Clave EQA-TERMINAL-001 -PaymentId 999888
+```
+
+El script publica el mensaje en RabbitMQ y responde:
+
+```json
+{"routed":true}
+```
+
+Parámetros opcionales: `-Monto`, `-Canal` (`CASH`, `CARD`, `BANK_TRANSFER`, `CHECK`)
+y `-Descripcion`. Usa una clave nueva cada vez; si repites la misma, el
+consumidor la ignora por idempotencia.
+
+Después revisa:
+
+```bat
+docker compose logs -f pagos-consumer
+```
+
+Debe salir `Pago recibido`, `Flag guardado` y `ENTREGADO al banco`.
+
+> El script **simula al productor**. El productor real sigue corriendo por su
+> `@Scheduled` y se ve en `docker compose logs -f pagos-producer`.
+
+## 6. Notas
 
 - La request **Enviar pago directo (contrato)** llama al banco sin pasar por el
   consumidor; sirve para probar el contrato, no para escribir flag/log.

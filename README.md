@@ -509,7 +509,8 @@ ApiBanco/
 │  ├─ datos-prueba.md           # origen y mapeo de datos
 │  └─ diagramas.md              # diagramas Mermaid de la Feature 3
 ├─ scripts/
-│  └─ conciliar.ps1
+│  ├─ conciliar.ps1
+│  └─ probar-mensaje.ps1
 ├─ pagos-producer/              # lee MariaDB y publica en RabbitMQ
 └─ pagos-consumer-banco/        # consume, llama al banco y guarda flag/log
 ```
